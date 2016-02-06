@@ -1,0 +1,240 @@
+<?php
+
+$fileOpen = fopen('data/v4/2018Edges.txt','r');
+  if (!$fileOpen){
+    echo 'ERROR: No ha sido posible abrir el archivo. Revisa su nombre y sus permisos.'; exit;
+  }
+
+ $index = 0; // contador de líneas
+  while (!feof($fileOpen)) { // loop hasta que se llegue al final del archivo
+
+    $index++;
+    $line = fgets($fileOpen);   
+    $edges[$index] = explode("|",$line); // guardamos toda la línea en $line como un string
+    $fileOpen++; // necesitamos llevar el puntero del archivo a la siguiente línea
+  }
+
+$fileOpen = fopen('data/v4/2018Nodes.txt','r');
+  if (!$fileOpen){
+    echo 'ERROR: No ha sido posible abrir el archivo. Revisa su nombre y sus permisos.'; exit;
+  }
+
+ $index = 0; // contador de líneas
+  while (!feof($fileOpen)) { // loop hasta que se llegue al final del archivo
+
+    $index++;
+    $line = fgets($fileOpen);   
+    $nodos[$index] = explode(",",$line); // guardamos toda la línea en $line como un string
+    $fileOpen++; // necesitamos llevar el puntero del archivo a la siguiente línea
+  }
+
+  $numberOfNodes = count($nodos);
+  $numberOfEdges = count($edges);
+
+?>
+
+<!-- START SIGMA IMPORTS -->
+<script src="../src/sigma.core.js"></script>
+<script src="../src/conrad.js"></script>
+<script src="../src/utils/sigma.utils.js"></script>
+<script src="../src/utils/sigma.polyfills.js"></script>
+<script src="../src/sigma.settings.js"></script>
+<script src="../src/classes/sigma.classes.dispatcher.js"></script>
+<script src="../src/classes/sigma.classes.configurable.js"></script>
+<script src="../src/classes/sigma.classes.graph.js"></script>
+<script src="../src/classes/sigma.classes.camera.js"></script>
+<script src="../src/classes/sigma.classes.quad.js"></script>
+<script src="../src/captors/sigma.captors.mouse.js"></script>
+<script src="../src/captors/sigma.captors.touch.js"></script>
+<script src="../src/renderers/sigma.renderers.canvas.js"></script>
+<script src="../src/renderers/sigma.renderers.webgl.js"></script>
+<script src="../src/renderers/sigma.renderers.def.js"></script>
+<script src="../src/renderers/webgl/sigma.webgl.nodes.def.js"></script>
+<script src="../src/renderers/webgl/sigma.webgl.nodes.fast.js"></script>
+<script src="../src/renderers/webgl/sigma.webgl.edges.def.js"></script>
+<script src="../src/renderers/webgl/sigma.webgl.edges.fast.js"></script>
+<script src="../src/renderers/webgl/sigma.webgl.edges.arrow.js"></script>
+<script src="../src/renderers/canvas/sigma.canvas.labels.def.js"></script>
+<script src="../src/renderers/canvas/sigma.canvas.hovers.def.js"></script>
+<script src="../src/renderers/canvas/sigma.canvas.nodes.def.js"></script>
+<script src="../src/renderers/canvas/sigma.canvas.edges.def.js"></script>
+<script src="../src/renderers/canvas/sigma.canvas.edges.curve.js"></script>
+<script src="../src/renderers/canvas/sigma.canvas.edges.arrow.js"></script>
+<script src="../src/renderers/canvas/sigma.canvas.edges.curvedArrow.js"></script>
+<script src="../src/middlewares/sigma.middlewares.rescale.js"></script>
+<script src="../src/middlewares/sigma.middlewares.copy.js"></script>
+<script src="../src/misc/sigma.misc.animation.js"></script>
+<script src="../src/misc/sigma.misc.bindEvents.js"></script>
+<script src="../src/misc/sigma.misc.drawHovers.js"></script>
+<!-- END SIGMA IMPORTS -->
+<script src="../plugins/sigma.plugins.dragNodes/sigma.plugins.dragNodes.js"></script>
+<div id="container">
+  <style>
+    #graph-container {
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      position: absolute;
+    }
+  </style>
+  <div id="graph-container"></div>
+</div>
+<div><img src=img/legend3.png></div>
+<script src="../plugins/sigma.layout.forceAtlas2/worker.js"></script>
+<script src="../plugins/sigma.layout.forceAtlas2/supervisor.js"></script>
+<script>
+
+var seleccionado;
+sigma.classes.graph.addMethod('neighbors', function(nodeId) {
+  var k,
+    neighbors = {},
+    index = this.allNeighborsIndex[nodeId] || {};
+
+    for (k in index)
+      neighbors[k] = this.nodesIndex[k];
+
+    return neighbors;
+  });
+
+var nodos = <?php echo json_encode($nodos); ?>; 
+var enlaces = <?php echo json_encode($edges); ?>; 
+var numeroNodos = <?php echo $numberOfNodes; ?>; 
+var numeroEnlaces = <?php echo $numberOfEdges; ?>; 
+
+/**
+ * This is a basic example to show all the different available edge renderers
+ * for the canvas renderer.
+ */
+var i,
+    s,
+    N = 100,
+    E = 500,
+    g = {
+      nodes: [],
+      edges: []
+    };
+
+// Generate a random graph:
+var coloreado = '#666';
+for (i = 1; i <numeroNodos; i++){
+  if (nodos[i][1].trim( )== 'afrinic') {coloreado = 'green' };
+  if (nodos[i][1].trim() == 'arin') {coloreado = 'red' };
+  if (nodos[i][1].trim() == 'ripencc') {coloreado = 'yellow' };
+  if (nodos[i][1].trim() == 'apnic') {coloreado = 'blue' };
+  if (nodos[i][1].trim() == 'selected') {coloreado = 'black' };
+  g.nodes.push({
+    id: nodos[i][0].trim(),
+    label: "AS"+nodos[i][0].trim(),
+    x: Math.random(),
+    y: Math.random(),
+    size: 10,
+    color: coloreado
+  });
+}
+
+for (i = 1; i < numeroEnlaces; i++)
+  g.edges.push({
+    id: 'e' + i,
+    source: enlaces[i][0].trim(),
+    target: enlaces[i][1].trim(),
+    size: Math.random(),
+    color: '#ccc',
+    type: 'arrow'
+  });
+
+// Instantiate sigma:
+s = new sigma({
+  graph: g,
+   settings: {
+    edgeLabelSize: 'proportional',
+    enableEdgeHovering: true,
+    edgeHoverColor: 'edge',
+    edgeHoverSizeRatio: 5,
+    edgeHoverExtremities: true,
+    borderSize: 3,
+    labelThreshold: 13,
+    hoverFontStyle: 'bold',
+    minNodeSize: 5,
+    maxNodeSize: 5,
+    minEdgeSize: 1.5,
+    maxEdgeSize: 1.5,
+    minArrowSize: 80
+  }, 
+  renderer: {
+    container: document.getElementById('graph-container'),
+    type: 'canvas'
+  }
+  
+});
+
+    console.log("debug")
+    s.startForceAtlas2({
+      linLogMode: false,
+      outboundAttractionDistribution: false,
+      adjustSizes: false,
+      edgeWeightInfluence: 0,
+      scalingRatio: 1,
+      strongGravityMode: false,
+      gravity: 1,
+      barnesHutOptimize: true,
+      barnesHutTheta: 0.5,
+      slowDown: 1,
+      startingIterations: 1,
+      iterationsPerRender: 1
+    }); 
+      
+    setTimeout(function(){s.stopForceAtlas2();}, 5000);
+
+    s.graph.nodes().forEach(function(n) {
+      n.originalColor = n.color;
+    });
+      
+    s.graph.edges().forEach(function(e) {
+      e.originalColor = e.color;
+    });
+
+    s.bind('doubleClickNode', function(e) {
+      var nodeId = e.data.node.id,
+      toKeep = s.graph.neighbors(nodeId);
+      toKeep[nodeId] = e.data.node;
+      seleccionado = nodeId;
+      s.graph.nodes().forEach(function(n) {
+        if (toKeep[n.id])
+          n.color = n.originalColor;
+        else
+          n.color = 'transparent';
+      });
+
+      s.graph.edges().forEach(function(e) {
+        if (toKeep[e.source] && toKeep[e.target]){
+          if (toKeep[e.source]['id'] == seleccionado){
+            e.color = e.originalColor;
+          }else if (toKeep[e.target]['id'] == seleccionado){
+            e.color = e.originalColor;
+          }else{
+            e.color = 'transparent';  
+          }
+        }else{
+          e.color = 'transparent';
+        }
+      });
+
+    s.refresh();
+    });
+
+    s.bind('clickStage', function(e) {
+      s.graph.nodes().forEach(function(n) {
+        n.color = n.originalColor;
+      });
+
+      s.graph.edges().forEach(function(e) {
+        e.color = e.originalColor;
+      });
+
+      // Same as in the previous event:
+      s.refresh();
+    });
+
+sigma.plugins.dragNodes(s, s.renderers[0]);
+</script>
