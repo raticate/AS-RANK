@@ -21,6 +21,12 @@ startdate TIMESTAMP NULL,
 enddate TIMESTAMP NULL,
 PRIMARY KEY (IPversion, AS1, Customer, startdate, enddate));
 
+CREATE TABLE IF NOT EXISTS ASRank.PrefixCone(
+IPversion INT NOT NULL,
+AS1 INT NOT NULL,
+Prefix TEXT NOT NULL,
+startdate INT NULL
+enddate INT NULL);
 "
 
 
