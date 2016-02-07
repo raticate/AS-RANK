@@ -43,31 +43,6 @@ date_info_start = [1998, 01]
 k_year = date_info_start[0]
 k_month = date_info_start[1]
 
-
-
-#print List_possibilities
-
-
-#Select data from the as-relationship
-sql_command = """select AS1, AS2, relation from ASRelationships where enddate is NULL and IPversion = 4;"""
-cur.execute(sql_command)
-stored_AS_relationships = cur.fetchall()
-#print "stored_AS_relationships = ", stored_AS_relationships
-
-#for elmt in stored_AS_relationships:
-
-
-
-
-stored_AS_relationships_list = []
-for link in stored_AS_relationships:
-    print str(link[0]) + '__'  + str(link[1]) + '__' + str(link[2])
-    stored_AS_relationships_list.append(str(link[0]) + '__'  + str(link[1]) + '__' + str(link[2]))
-#print stored_AS_relationships
-
-
-
-
 List_possibilities = []
 while (k_year <= date_info_end[0]) :
     if k_month >9:
@@ -85,10 +60,7 @@ while (k_year <= date_info_end[0]) :
     #print elmt
 
     if elmt not in list_treated_files:
-        #output = ['.as-rel.txt.gz', '.ppdc-ases.txt.gz']
-        output = ['.as-rel.txt.gz']
-        
-        
+        output = ['.ppdc-ases.txt.gz']
         current_timestamp = int(elmt)
         print current_timestamp
         #sys.exit()
@@ -96,18 +68,17 @@ while (k_year <= date_info_end[0]) :
         for ext in output:
             
             #Select data from the as-relationship
-            sql_command = """select AS1, AS2, relation from ASRelationships where enddate is NULL and IPversion = 4;"""
+            sql_command = """select AS1, Customer from CustomerCone where enddate is NULL and IPversion = 4;"""
             cur.execute(sql_command)
-            stored_AS_relationships = cur.fetchall()
+            stored_AS_customer_relationships = cur.fetchall()
             #
     
-            stored_AS_relationships_list = []
-            for link in stored_AS_relationships:
-                print str(link[0]) + '__'  + str(link[1]) + '__' + str(link[2])
-                stored_AS_relationships_list.append(str(link[0]) + '__'  + str(link[1]) + '__' + str(link[2]))
-                #print stored_AS_relationships
-        
-        
+            stored_AS_customer_relationships_list = []
+            for link in stored_AS_customer_relationships:
+                item = str(link[0]) + '__'  + str(link[1]) 
+                print item
+                stored_AS_customer_relationships_list.append(item)
+                #print stored_AS_customer_relationships
             time.sleep(10)
             print 'I am parsing ', elmt + ext
             current = elmt + ext
@@ -126,33 +97,26 @@ while (k_year <= date_info_end[0]) :
                 with open (file[:-3], 'r') as fh:
                     for line1 in fh:
                         print line1
-                        tab = line1.split('|')
-                        if len(tab) == 3:
-                            if str(link[0]) + '__'  + str(link[1]) + '__' + str(link[2]) not in stored_AS_relationships_list:
-                                sql_command = """ INSERT IGNORE INTO ASRelationships (IPversion,  AS1,  AS2, relation, startdate) VALUES (%s, %s, %s, %s, %s); """
-                                cur.execute(sql_command, (4, int(tab[0]), int(tab[1]), int(tab[2]), current_timestamp   ))
-                                db.commit()
-                            else:
-                                stored_AS_relationships_list.remove(str(link[0]) + '__'  + str(link[1]) + '__' + str(link[2]))
+                        if not line1.startswith("#"):
+                            tokens = line1.split()
+                            as1 = tokens[0]
+                            customers = tokens[1:]
+                            for cust in customers:
+                                tuple = str(as1) + '__' + str(cust)
+                                if tuple not in stored_AS_customer_relationships_list:
+                                    sql_command = """ INSERT IGNORE INTO CustomerCone (IPversion,  AS1,  Customer, startdate) VALUES (%s, %s, %s, %s); """
+                                    cur.execute(sql_command, (4, as1, cust, current_timestamp))
+                                    db.commit()
+                                else:
+                                     stored_AS_customer_relationships_list.remove(tuple)
 
-
-                    for couple in stored_AS_relationships_list:
-                        sql_command = """ UPDATE ASRelationships set enddate = %s where IPversion = %s and AS1 = %s and AS2 = %s and relation = %s and enddate is NULL  ; """
+                    for couple in stored_AS_customer_relationships_list:
+                        sql_command = """ UPDATE CustomerCone set enddate = %s where IPversion = %s and AS1 = %s and Customer = %s and enddate is NULL  ; """
                         print couple
                         tab1 = couple.split('__')
-                        print 'update for ', couple, tab[0], tab[1], tab[2]
-                        cur.execute(sql_command, ( current_timestamp, 4, int(tab[0]), int(tab[1]),  int(tab[2])))
+                        print 'update for ', couple, tab1[0], tab1[1]
+                        cur.execute(sql_command, ( current_timestamp, 4, int(tab1[0]), int(tab1[1])))
                         db.commit()
-
-
-        #sys.exit()
-
-
-        #sys.exit()
-        ## after treatment put it into the file
-            
-        # with open('list_of_treated_files.txt', 'a') as fh:
-        #fh.write('%s \n' %(elmt+ext))
 
     else:
             print 'do not treat ', elmt + ext
