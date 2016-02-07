@@ -1,9 +1,8 @@
-PASSWORD=""
+PASSWORD="root"
 
 mysql -u root -p$PASSWORD -Bse "CREATE DATABASE IF NOT EXISTS ASRank;"
-  
-  
-mysql -u root -p$PASSWORD -D  ASRank -s -e "CREATE TABLE IF NOT EXISTS ASRank.ASRelationships  (
+
+mysql -u root -p$PASSWORD -D ASRank -s -e "CREATE TABLE IF NOT EXISTS ASRank.ASRelationships  (
 id SERIAL,
 IPversion INT NOT NULL,
 AS1 INT NOT NULL,
@@ -35,13 +34,11 @@ IPversion INT NOT NULL,
 startdate INT NOT NULL,
 Size INT NOT NULL);
 
-CREATE TABLE IF NOT EXISTS ASRank.PrefixCone(
+CREATE TABLE IF NOT EXISTS ASRank.CustomerPrefixCone(
 id SERIAL,
 IPversion INT NOT NULL,
 AS1 INT NOT NULL,
 Prefix TEXT NOT NULL,
-startdate INT NULL
+startdate INT NULL,
 enddate INT NULL);
 "
-
-
