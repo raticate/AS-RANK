@@ -3,36 +3,32 @@ from datetime import datetime, timedelta
 import time
 import datetime as dt
 
-
-db = MySQLdb.connect(host="192.168.2.5",
-                     user="hackaton",
-                     passwd="password",
-                     db="ASRank")
-
+db = MySQLdb.connect(host="localhost", user="root", passwd="", db="ASRank")
 cur = db.cursor()
 
 
-
-
+## download all the relationship if needed
 link = """data.caida.org/datasets/as-relationships/"""
-print link
-
-## download all the relationship and store it
 command = """wget --no-parent -r """ +link
 print '\n download list of files :', command
 #os.system(command)
 
 
-## Load the list of files treated:
+## Load the list of treated files :
 list_treated_files = []
-with open('list_of_treated_files.txt', 'r') as fg:
-    for line in fg:
-        line= str(line).strip()
-        if line not in list_treated_files:
-            list_treated_files.append(line)
+try:
+    with open('list_of_treated_files_rel.txt', 'r') as fg:
+        for line in fg:
+            line= str(line).strip()
+            if line not in list_treated_files:
+                list_treated_files.append(str(line).strip())
+except:
+    with open('list_of_treated_files_rel.txt', 'a') as fk:
+        print
 
 
 
+## Current date
 A = str(datetime.now() + timedelta(days=-1))
 table = A.split(' ')
 date_info = table[0].split('-')
@@ -45,132 +41,100 @@ k_month = date_info_start[1]
 
 
 
-#print List_possibilities
 
-
-#Select data from the as-relationship
-sql_command = """select AS1, AS2, relation from ASRelationships where enddate is NULL and IPversion = 4;"""
-cur.execute(sql_command)
-stored_AS_relationships = cur.fetchall()
-#print "stored_AS_relationships = ", stored_AS_relationships
-
-#for elmt in stored_AS_relationships:
-
-
-
-
-stored_AS_relationships_list = []
-for link in stored_AS_relationships:
-    print str(link[0]) + '__'  + str(link[1]) + '__' + str(link[2])
-    stored_AS_relationships_list.append(str(link[0]) + '__'  + str(link[1]) + '__' + str(link[2]))
-#print stored_AS_relationships
-
-
-
-
-List_possibilities = []
 while (k_year <= date_info_end[0]) :
     if k_month >9:
         elmt =   str(k_year)  + str(k_month) + '01'
     else:
         elmt =   str(k_year) + '0' + str(k_month) + '01'
-    #print comb
-    #List_possibilities.append(int(comb)
+
     if k_month == 12:
         k_month = 1
         k_year +=1
     elif k_month<12:
         k_month +=1
 
-    #print elmt
 
-    if elmt not in list_treated_files:
-        #output = ['.as-rel.txt.gz', '.ppdc-ases.txt.gz']
-        output = ['.as-rel.txt.gz']
-        
-        
-        current_timestamp = int(elmt)
-        print current_timestamp
-        #sys.exit()
-        
-        for ext in output:
+    #output = ['.as-rel.txt.gz', '.ppdc-ases.txt.gz']
+    output = ['.as-rel.txt.gz', '.as-rel.txt.bz2']
+    for ext in output:
+        current = elmt + ext
+        if  str(current).strip() not in list_treated_files:
+                print
+                current_timestamp = int(elmt)
+                print current_timestamp
+                
+                #Select data from the as-relationship
+                sql_command = """select AS1, AS2, relation from ASRelationships where enddate is NULL and IPversion = 4;"""
+                cur.execute(sql_command)
+                stored_AS_relationships = cur.fetchall()
+                
+                stored_AS_relationships_list = []
+                for link in stored_AS_relationships:
+                    stored_AS_relationships_list.append(str(link[0]).strip() + '|'  + str(link[1]).strip() + '|' + str(link[2]).strip())
+                    #print stored_AS_relationships
             
-            #Select data from the as-relationship
-            sql_command = """select AS1, AS2, relation from ASRelationships where enddate is NULL and IPversion = 4;"""
-            cur.execute(sql_command)
-            stored_AS_relationships = cur.fetchall()
-            #
-    
-            stored_AS_relationships_list = []
-            for link in stored_AS_relationships:
-                print str(link[0]) + '__'  + str(link[1]) + '__' + str(link[2])
-                stored_AS_relationships_list.append(str(link[0]) + '__'  + str(link[1]) + '__' + str(link[2]))
-                #print stored_AS_relationships
-        
-        
-            time.sleep(10)
-            print 'I am parsing ', elmt + ext
-            current = elmt + ext
-            file = 'data.caida.org/datasets/as-relationships/serial-1/' + current
-            
-            print current_timestamp
-            
-            ## dezip file
-            try:
-                command = 'gzip -d  ' + file
-                os.system(command)
-            except:
-                print 'no need to dezip'
-            
-            if os.path.isfile(file[:-3]):
-                with open (file[:-3], 'r') as fh:
-                    for line1 in fh:
-                        print line1
-                        tab = line1.split('|')
-                        if len(tab) == 3:
-                            if str(link[0]) + '__'  + str(link[1]) + '__' + str(link[2]) not in stored_AS_relationships_list:
-                                sql_command = """ INSERT IGNORE INTO ASRelationships (IPversion,  AS1,  AS2, relation, startdate) VALUES (%s, %s, %s, %s, %s); """
-                                cur.execute(sql_command, (4, int(tab[0]), int(tab[1]), int(tab[2]), current_timestamp   ))
+                print 'len_before_sup = ', len(stored_AS_relationships_list) #, stored_AS_relationships_list
+                time.sleep(10)
+                print 'I am parsing ', current
+                
+                file = 'data.caida.org/datasets/as-relationships/serial-1/' + current
+                
+                print 'current_date =', current_timestamp
+                
+                ## dezip file
+                try:
+                    if  '.as-rel.txt.gz' in file and os.path.isfile(file):
+                        command = 'gzip -d  ' + file
+                        os.system(command)
+                
+                    elif '.as-rel.txt.bz2' in file and os.path.isfile(file) :
+                        command = 'bunzip2  ' + file
+                        os.system(command)
+
+                except:
+                    print 'no need to dezip'
+
+
+                if os.path.isfile(file[:-3]):
+                    with open (file[:-3], 'r') as fh:
+
+                            for line1 in fh:
+                                #print line1
+                                tab = line1.split('|')
+                                if len(tab) == 3:
+                                    test_vc = str(tab[0]).strip() + '|'  + str(tab[1]).strip() + '|' + str(tab[2]).strip()
+                                    if test_vc not in stored_AS_relationships_list:
+                                        sql_command = """ INSERT IGNORE INTO ASRelationships (IPversion,  AS1,  AS2, relation, startdate) VALUES (%s, %s, %s, %s, %s); """
+                                        cur.execute(sql_command, (4, int(tab[0]), int(tab[1]), int(tab[2]), current_timestamp   ))
+                                        db.commit()
+                                        
+                                    elif test_vc in stored_AS_relationships_list:
+                                        print 'I found it so I suppressed ', test_vc
+                                        stored_AS_relationships_list.remove(test_vc)
+
+                            print 'len_after_sup = ', len(stored_AS_relationships_list) #, stored_AS_relationships_list
+
+
+                            for couple in stored_AS_relationships_list:
+                                sql_command = """ UPDATE ASRelationships set enddate = %s where IPversion = %s and AS1 = %s and AS2 = %s and relation = %s and enddate is NULL; """
+                                print couple
+                                tab1 = couple.split('|')
+                                print 'update for ', couple, tab1[0], tab1[1], tab1[2]
+                                cur.execute(sql_command, (current_timestamp, 4, int(tab1[0]), int(tab1[1]),  int(tab1[2])))
                                 db.commit()
-                            else:
-                                stored_AS_relationships_list.remove(str(link[0]) + '__'  + str(link[1]) + '__' + str(link[2]))
+                                
+                            ## after treatment put it into the list of treated file
+                            with open('list_of_treated_files.txt', 'a') as fh:
+                                fh.write('%s \n' %(elmt+ext))
 
-
-                    for couple in stored_AS_relationships_list:
-                        sql_command = """ UPDATE ASRelationships set enddate = %s where IPversion = %s and AS1 = %s and AS2 = %s and relation = %s and enddate is NULL  ; """
-                        print couple
-                        tab1 = couple.split('__')
-                        print 'update for ', couple, tab[0], tab[1], tab[2]
-                        cur.execute(sql_command, ( current_timestamp, 4, int(tab[0]), int(tab[1]),  int(tab[2])))
-                        db.commit()
-
-
-        #sys.exit()
-
-
-        #sys.exit()
-        ## after treatment put it into the file
-            
-        # with open('list_of_treated_files.txt', 'a') as fh:
-        #fh.write('%s \n' %(elmt+ext))
-
-    else:
-            print 'do not treat ', elmt + ext
+                else:
+                    print 'file ', file, ' not found in the folder; we pass '
 
 
 
-#sys.exit()
+        else:
+                print 'do not treat ', elmt + ext
 
-
-
-
-
-
-
-
-
-#sql_command = """ INSERT IGNORE INTO Treated_url (url_to_folder, folder_only, parsing_status) VALUES (%s, %s, %s); """
-#cur.execute(sql_command, (url_to_insert, folder_only, 'Notyet'))
-#db.commit()
 
 
