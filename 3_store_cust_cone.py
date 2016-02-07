@@ -77,7 +77,7 @@ def process_file(date, ext):
             db.commit()
 
     else:
-        print file[:-3]
+        print "didn't find", file[:-3]
 
 ## function ends
 
@@ -131,7 +131,7 @@ while (k_year <= date_info_end[0]) :
 
 
     #output = ['.as-rel.txt.gz', '.ppdc-ases.txt.gz']
-    output = ['.ppdc-ases.txt.gz', '..ppdc-ases.txt.bz2']
+    output = ['.ppdc-ases.txt.gz', '.ppdc-ases.txt.bz2']
     for ext in output:
         current = elmt + ext
         if  str(current).strip() not in list_treated_files:
