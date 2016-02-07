@@ -64,23 +64,23 @@ def process_file(date, ext):
             try:
                 for line1 in fh:
                 # skip headers
-                if not line1.startswith("#"):
-                    # split line to obtain as and customers
-                    tokens = line1.split()
-                    as1 = tokens[0]
-                    customers = tokens[1:]
-                    print as1
-                    #iterate customers
-                    print "iterating customers..."
-                    for cust in customers:
-                        tuple = str(as1).strip() + "__" +str(cust).strip()
-                        # tuple not in the database, add it with file timestamp
-                        if tuple not in stored_AS_customer_relationships_list:
-                            sql_command = """ INSERT IGNORE INTO CustomerCone (IPversion,  AS1,  Customer, startdate) VALUES (%s, %s, %s, %s); """
-                            cur.execute(sql_command, (4, as1, cust, current_timestamp))
-                        # tuple is in the file and the db, unmark in from db to get rows in the db that are not in the file
-                        else:
-                             stored_AS_customer_relationships_list.remove(tuple)
+                    if not line1.startswith("#"):
+                        # split line to obtain as and customers
+                        tokens = line1.split()
+                        as1 = tokens[0]
+                        customers = tokens[1:]
+                        print as1
+                        #iterate customers
+                        print "iterating customers..."
+                        for cust in customers:
+                            tuple = str(as1).strip() + "__" +str(cust).strip()
+                            # tuple not in the database, add it with file timestamp
+                            if tuple not in stored_AS_customer_relationships_list:
+                                sql_command = """ INSERT IGNORE INTO CustomerCone (IPversion,  AS1,  Customer, startdate) VALUES (%s, %s, %s, %s); """
+                                cur.execute(sql_command, (4, as1, cust, current_timestamp))
+                            # tuple is in the file and the db, unmark in from db to get rows in the db that are not in the file
+                            else:
+                                 stored_AS_customer_relationships_list.remove(tuple)
 
         # iterate remaining db rows, update their enddate
                 print "updating remaining db rows..."
