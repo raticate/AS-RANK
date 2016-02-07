@@ -23,16 +23,16 @@ else
     exit -1;
 }
 
-my $hostname = "192.168.142.118";
-my $user = "hackaton";
-my $password = "password";
-my $database = "ASRank1";
+my $hostname = "localhost";
+my $user = "root";
+my $password = "root";
+my $database = "ASRank";
 my $dsn = "DBI:mysql:database=$database;host=$hostname";
 my $dbh = DBI->connect($dsn, $user, $password);
 
 #$dbh->do("drop table prefixcone");
 
-$dbh->do("create table if not exists prefixcone(" .
+$dbh->do("create table if not exists CustomerPrefixCone(" .
 	 " id SERIAL," .
 	 " ipversion int not null," .
 	 " as1 int not null," .
@@ -41,7 +41,7 @@ $dbh->do("create table if not exists prefixcone(" .
 	 " enddate int null)");
 
 my %data;
-my $sth = $dbh->prepare("select id, as1, prefix, startdate from PrefixCone where enddate is null and ipversion=4");
+my $sth = $dbh->prepare("select id, as1, prefix, startdate from CustomerPrefixCone where enddate is null and ipversion=4");
 $sth->execute;
 
 my %indb;
@@ -84,7 +84,7 @@ while(<PFXCONE>)
 close PFXCONE;
 
 $dbh->begin_work;
-$sth = $dbh->prepare("update PrefixCone set enddate=? where id=?");
+$sth = $dbh->prepare("update CustomerPrefixCone set enddate=? where id=?");
 foreach my $as (sort {$a <=> $b} keys %indb)
 {
     foreach my $pref (keys %{$indb{$as}})
@@ -98,7 +98,7 @@ $sth->finish;
 $dbh->commit;
 
 $dbh->begin_work;
-$sth = $dbh->prepare("insert into PrefixCone(IPversion, AS1, Prefix, startdate) values(4,?,?,?)");
+$sth = $dbh->prepare("insert into CustomerPrefixCone(IPversion, AS1, Prefix, startdate) values(4,?,?,?)");
 foreach my $as (sort {$a <=> $b} keys %newdb)
 {
     foreach my $pref (@{$newdb{$as}})
