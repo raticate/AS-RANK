@@ -11,7 +11,7 @@ AS2 INT NOT NULL,
 startdate INT(20) NULL,
 enddate INT(20) NULL,
 relation INT NULL,
-PRIMARY KEY (IPversion, AS1, AS2, startdate, enddate));
+PRIMARY KEY (IPversion, AS1, AS2, startdate));
 
 CREATE TABLE IF NOT EXISTS ASRank.CustomerCone(
 id SERIAL,
@@ -20,7 +20,7 @@ AS1 INT NOT NULL,
 Customer INT NOT NULL,
 startdate INT(20) NULL,
 enddate INT(20) NULL,
-PRIMARY KEY (IPversion, AS1, Customer, startdate, enddate));
+PRIMARY KEY (IPversion, AS1, Customer, startdate));
 
 CREATE TABLE IF NOT EXISTS ASRank.CustomerConeSize(
 id SERIAL,
