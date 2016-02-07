@@ -8,7 +8,9 @@ db = MySQLdb.connect(host="localhost",
                      passwd="root",
                      db="ASRank")
 
+db.autocommit(False)
 cur = db.cursor()
+
 
 def process_file(date, ext):
     current_timestamp = int(date)
@@ -59,7 +61,8 @@ def process_file(date, ext):
 	print 'I found ', check
         #open file, read each line
         with open (check, 'r') as fh:
-            for line1 in fh:
+            try:
+                for line1 in fh:
                 # skip headers
                 if not line1.startswith("#"):
                     # split line to obtain as and customers
@@ -75,20 +78,22 @@ def process_file(date, ext):
                         if tuple not in stored_AS_customer_relationships_list:
                             sql_command = """ INSERT IGNORE INTO CustomerCone (IPversion,  AS1,  Customer, startdate) VALUES (%s, %s, %s, %s); """
                             cur.execute(sql_command, (4, as1, cust, current_timestamp))
-                            db.commit()
                         # tuple is in the file and the db, unmark in from db to get rows in the db that are not in the file
                         else:
                              stored_AS_customer_relationships_list.remove(tuple)
 
         # iterate remaining db rows, update their enddate
-        print "updating remaining db rows..."
-        for row in stored_AS_customer_relationships_list:
-            sql_command = """ UPDATE CustomerCone set enddate = %s where IPversion = %s and AS1 = %s and Customer = %s and enddate is NULL  ; """
-            tokens = row.split("__")
-            print 'update for ', tokens[0], tokens[1]
-            cur.execute(sql_command, (current_timestamp, 4, int(tokens[0]), int(tokens[1])))
-            db.commit()
+                print "updating remaining db rows..."
+                for row in stored_AS_customer_relationships_list:
+                    sql_command = """ UPDATE CustomerCone set enddate = %s where IPversion = %s and AS1 = %s and Customer = %s and enddate is NULL  ; """
+                    tokens = row.split("__")
+                    print 'update for ', tokens[0], tokens[1]
+                    cur.execute(sql_command, (current_timestamp, 4, int(tokens[0]), int(tokens[1])))
+                db.commit()
+            except:
+                db.rollback()
 
+            
     else:
         print "didn't find", check
 
