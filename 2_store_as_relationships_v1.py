@@ -3,7 +3,8 @@ from datetime import datetime, timedelta
 import time
 import datetime as dt
 
-db = MySQLdb.connect(host="localhost", user="root", passwd="root", db="ASRank")
+db = MySQLdb.connect(host="localhost", user="root", passwd="edjrosse07", db="ASRank")
+db.autocommit(False)
 cur = db.cursor()
 
 
@@ -11,7 +12,7 @@ cur = db.cursor()
 link = """data.caida.org/datasets/as-relationships/"""
 command = """wget --no-parent -r """ +link
 print '\n download list of files :', command
-os.system(command)
+#os.system(command)
 
 
 ## Load the list of treated files :
@@ -75,7 +76,7 @@ while (k_year <= date_info_end[0]) :
                     #print stored_AS_relationships
             
                 print 'len_before_sup = ', len(stored_AS_relationships_list) #, stored_AS_relationships_list
-                #time.sleep(10)
+                time.sleep(10)
                 print 'I am parsing ', current
                 
                 file = 'data.caida.org/datasets/as-relationships/serial-1/' + current
@@ -86,21 +87,19 @@ while (k_year <= date_info_end[0]) :
                 try:
                     if  '.as-rel.txt.gz' in file and os.path.isfile(file):
                         command = 'gzip -d  ' + file
-			check = file[:-3]
                         os.system(command)
                 
                     elif '.as-rel.txt.bz2' in file and os.path.isfile(file) :
                         command = 'bunzip2  ' + file
-			check = file[:-4]
                         os.system(command)
 
                 except:
                     print 'no need to dezip'
 
 
-                if os.path.isfile(check):
-                    with open (check, 'r') as fh:
-
+                if os.path.isfile(file[:-3]):
+                    with open (file[:-3], 'r') as fh:
+                        try:
                             for line1 in fh:
                                 #print line1
                                 tab = line1.split('|')
@@ -109,7 +108,7 @@ while (k_year <= date_info_end[0]) :
                                     if test_vc not in stored_AS_relationships_list:
                                         sql_command = """ INSERT IGNORE INTO ASRelationships (IPversion,  AS1,  AS2, relation, startdate) VALUES (%s, %s, %s, %s, %s); """
                                         cur.execute(sql_command, (4, int(tab[0]), int(tab[1]), int(tab[2]), current_timestamp   ))
-                                        db.commit()
+                                        #db.commit()
                                         
                                     elif test_vc in stored_AS_relationships_list:
                                         print 'I found it so I suppressed ', test_vc
@@ -124,14 +123,18 @@ while (k_year <= date_info_end[0]) :
                                 tab1 = couple.split('|')
                                 print 'update for ', couple, tab1[0], tab1[1], tab1[2]
                                 cur.execute(sql_command, (current_timestamp, 4, int(tab1[0]), int(tab1[1]),  int(tab1[2])))
-                                db.commit()
+                                #db.commit()
                                 
                             ## after treatment put it into the list of treated file
-                            with open('list_of_treated_files_rel.txt', 'a') as fh:
+                            with open('list_of_treated_files.txt', 'a') as fh:
                                 fh.write('%s \n' %(elmt+ext))
 
+                            db.commit()
+                                
+                        except:
+                            db.rollback()
                 else:
-                    print 'file ', check, ' not found in the folder; we pass '
+                    print 'file ', file, ' not found in the folder; we pass '
 
 
 
