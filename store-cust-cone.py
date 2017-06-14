@@ -5,7 +5,7 @@ import _mysql
 import sys
 
 try:
-    con = _mysql.connect('132.249.65.124', 'hackaton', 'password', 'asrank')
+    con = _mysql.connect('132.249.65.124', 'hackaton', 'password', '')
         
     con.query("SELECT VERSION()")
     result = con.use_result()
