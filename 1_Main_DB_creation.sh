@@ -1,4 +1,4 @@
-PASSWORD="root"
+PASSWORD=""
 
 mysql -u root -p$PASSWORD -Bse "CREATE DATABASE IF NOT EXISTS ASRank;"
 
