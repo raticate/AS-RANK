@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 import time
 import datetime as dt
 
-db = MySQLdb.connect(host="localhost", user="root", passwd="edjrosse07", db="ASRank")
+db = MySQLdb.connect(host="localhost", user="root", passwd="", db="ASRank")
 db.autocommit(False)
 cur = db.cursor()
 
