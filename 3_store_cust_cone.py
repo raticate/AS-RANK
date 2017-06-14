@@ -5,7 +5,7 @@ import datetime as dt
 
 db = MySQLdb.connect(host="localhost",
                      user="root",
-                     passwd="root",
+                     passwd="",
                      db="ASRank")
 
 db.autocommit(False)
