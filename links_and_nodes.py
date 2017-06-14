@@ -5,7 +5,7 @@ import datetime as dt
 
 
 ## All infos about all ASes
-db = MySQLdb.connect(host="localhost", user="root", passwd="root", db="ASRank")
+db = MySQLdb.connect(host="localhost", user="root", passwd="", db="ASRank")
 db.autocommit(False)
 cur = db.cursor()
 
